@@ -124,6 +124,7 @@ window.onload = function() {
 
 	elements.arrow.onclick = function() {
 		// click on left arrow in preview mode
+		document.getElementById('span_overview').click();
 		elements.divSelected.classList.add('hidden');
 		elements.divSelectedMain.classList.add('hidden');
 		elements.divBody.classList.remove('hidden');
@@ -184,7 +185,6 @@ window.addEventListener('message', function(message) {
 			toogleLoader(false);
 			break;
 		case 'Removed':
-			// todo поправить для общего списка
 			installedPlugins = installedPlugins.filter(function(el){return el.guid !== message.guid});
 			if (elements.btnMyPlugins.classList.contains('btn_selected')) {
 				showListofPlugins(false);
