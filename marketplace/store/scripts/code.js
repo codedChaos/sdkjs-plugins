@@ -16,17 +16,16 @@
  *
  */
 
-// todo ссылки при install/update поправить
 let allPlugins;                                          // list of all plugins from config
 let installedPlugins;                                    // list of intalled plugins
 const configUrl = './config.json';                       // url to config.json
 const elements = {};                                     // all elements
-const isDesctop = true;// window.AscDesktopEditor !== undefined; // desctop detecting
+const isDesctop = window.AscDesktopEditor !== undefined; // desctop detecting
 let isLoading = false;                                   // flag loading
 let loader;                                              // loader
 var Ps;                                                  // perfect scrollbar
 const lang = detectLanguage() || "en-EN";                // current language
-const shortLang = lang.split('-')[0];                     // short language
+const shortLang = lang.split('-')[0];                    // short language
 let bTranslate = false;                                  // flag translate or not
 let translate =                                          // translations for current language
 {
@@ -68,7 +67,7 @@ switch (shortLang) {
 // for making preview
 let counter = 0;
 let row;
-let theme;
+let theme = parent.localStorage.getItem('ui-theme-id') || '';
 
 // TODO решить проблему с темой и добавить для неё разные стили (после интеграции можно будет попробовать прокинуть событие смены темы)
 // в теории её можно достать из parent.localStorage.getItem('ui-theme-id')
@@ -92,7 +91,6 @@ setTimeout(function(){
 
 window.onload = function() {
 	// detect theme (this is not currently in use)
-	theme = parent.localStorage.getItem('ui-theme-id') || '';
 	console.log('detected theme: ' + theme);
 	// init element
 	initElemnts();
@@ -103,9 +101,9 @@ window.onload = function() {
 
 	elements.btnMyPlugins.onclick = function() {
 		// click on my plugins button
-		if ( !this.classList.contains('btn_selected') ) {
-			elements.btnMarketplace.classList.remove('btn_selected');
-			this.classList.add('btn_selected');
+		if ( !this.classList.contains('primary') ) {
+			elements.btnMarketplace.classList.remove('submit','primary');
+			this.classList.add('submit','primary');
 			elements.linkNewPlugin.innerHTML = translate["Install plugin manually"];
 			showListofPlugins(false);
 		}
@@ -114,8 +112,8 @@ window.onload = function() {
 	elements.btnMarketplace.onclick = function() {
 		// click on marketplace button
 		if ( !this.classList.contains('primary') ) {
-			elements.btnMyPlugins.classList.remove('btn_selected');
-			this.classList.add('btn_selected');
+			elements.btnMyPlugins.classList.remove('submit','primary');
+			this.classList.add('submit','primary');
 			elements.linkNewPlugin.innerHTML = translate["Submit your own plugin"];
 			
 			showListofPlugins(true);
@@ -207,6 +205,13 @@ window.addEventListener('message', function(message) {
 			break;
 		case 'Error':
 			// TODO make error preview
+			break;
+		case 'Theme':
+			let rule = '\n.asc-plugin-loader{background-color:' + message.theme['background-normal'] +';width: 120px;height: 40px;display: flex;justify-content: center;align-items: center;border-radius: 5px;}';
+			let styleTheme = document.createElement('style');
+            styleTheme.type = 'text/css';
+            styleTheme.innerHTML = message.style + rule;
+            document.getElementsByTagName('head')[0].appendChild(styleTheme);
 			break;
 	};
 }, false);

@@ -66,6 +66,15 @@
 		
 	}, false);
 
+	window.Asc.plugin.onThemeChanged = function(theme)
+	{
+		window.Asc.plugin.onThemeChangedBase(theme);
+		let style = document.getElementsByTagName('head')[0].lastChild;
+		let ifr = document.getElementById('iframe');
+		if (ifr && ifr.contentWindow)
+			ifr.contentWindow.postMessage(JSON.stringify({ type: 'Theme', theme: theme, style : style.innerHTML}));
+	};
+
 	let installed = [
 		{
 			url : "https://raw.githubusercontent.com/ONLYOFFICE/plugin-autocomplete/master/config.json",

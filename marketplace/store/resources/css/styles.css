@@ -30,9 +30,8 @@ label.header {
 	font-size: 14px !important;
 }
 
-.btn_selected {
-	color: #fff;
-	background-color: #7d858c
+.btn_menu {
+	font-weight: normal !important;
 }
 
 .div-loader {
@@ -157,7 +156,7 @@ label.header {
 	background-color: #adadad;
 	opacity: 0.5;
 }
-.asc-plugin-loader {
+/* .asc-plugin-loader {
 	background-color: #fff;
 	width: 120px;
 	height: 40px;
@@ -165,7 +164,7 @@ label.header {
 	justify-content: center;
 	align-items: center;
 	border-radius: 5px;
-}
+} */
 .asc-loader-title {
 	padding-left: 10px !important;
 }
@@ -179,21 +178,8 @@ label.header {
 	font-size: 13px !important;
 }
 
-.link_submit {
-	color : #445799 !important;
-}
-
 .link_submit:hover {
-	color : #445799 !important;
-	cursor: pointer;
-}
-
-.link_submit:active {
-	color : #445799 !important;
-}
-
-.link_submit:visited {
-	color : #445799 !important;
+	text-decoration: none !important;
 }
 
 .link_info {
