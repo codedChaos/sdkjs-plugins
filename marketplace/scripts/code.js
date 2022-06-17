@@ -33,7 +33,7 @@
 			case 'getInstalled':
 				window.Asc.plugin.executeMethod("GetInstalledPlugins", null, function(result) {
 					console.log('GetInstalledPlugins');
-					message.source.postMessage(JSON.stringify({type: 'InstalledPlugins', data: installed}), "*");
+					message.source.postMessage(JSON.stringify({type: 'InstalledPlugins', data: []}), "*");
 				});
 				break;
 			case 'install':
