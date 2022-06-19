@@ -32,34 +32,29 @@
 		switch (data.type) {
 			case 'getInstalled':
 				window.Asc.plugin.executeMethod("GetInstalledPlugins", null, function(result) {
-					console.log('GetInstalledPlugins');
-					message.source.postMessage(JSON.stringify({type: 'InstalledPlugins', data: []}), "*");
+					message.source.postMessage(JSON.stringify({type: 'InstalledPlugins', data: result}), "*");
 				});
 				break;
 			case 'install':
-				window.Asc.plugin.executeMethod("InstallPlugin", [data.url, data.guid], function(result) {
-					console.log('InstallPlugin');
+				window.Asc.plugin.executeMethod("InstallPlugin", [data.config], function(result) {
 					setTimeout(function(){
 						message.source.postMessage(JSON.stringify(result), "*");
-					},2000)
+					}, 100);
 				});
 				break;
 			case 'remove':
 				window.Asc.plugin.executeMethod("RemovePlugin", [data.guid], function(result) {
-					console.log('RemovePlugin');
 					setTimeout(function(){
 						message.source.postMessage(JSON.stringify(result), "*");
 
-					},2000)
+					}, 100);
 				});
 				break;
 			case 'update':
-				window.Asc.plugin.executeMethod("UpdatePlugin", [data.url, data.guid], function(result) {
-					console.log('UpdatePlugin');
+				window.Asc.plugin.executeMethod("UpdatePlugin", [data.config], function(result) {
 					setTimeout(function(){
 						message.source.postMessage(JSON.stringify(result), "*");
-					},2000)
-					
+					}, 100);
 				});
 				break;
 		}

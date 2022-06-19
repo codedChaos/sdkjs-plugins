@@ -468,9 +468,9 @@ function onClickInstall(target) {
 	let guid = target.parentNode.parentNode.getAttribute('data-guid');
 	let message = {
 		type : 'install',
-		url : allPlugins[guid].configUrl.replace('raw.githubusercontent', 'github').replace('master', 'blob/master'),
-		guid : guid
+		config : allPlugins[guid].config
 	};
+	message.config.baseUrl = allPlugins[guid].configUrl.substr(0, allPlugins[guid].configUrl.length - "config.json".length);
 	sendMessage(message);
 };
 
@@ -480,9 +480,9 @@ function onClickUpdate(target) {
 	let guid = target.parentElement.parentElement.parentElement.getAttribute('data-guid');
 	let message = {
 		type : 'update',
-		url : allPlugins[guid].configUrl.replace('raw.githubusercontent', 'github').replace('master', 'blob/master'),
-		guid : guid
+		config : allPlugins[guid].config
 	};
+	message.config.baseUrl = allPlugins[guid].configUrl.substr(0, allPlugins[guid].configUrl.length - "config.json".length);
 	sendMessage(message);
 };
 
