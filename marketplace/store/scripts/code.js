@@ -148,12 +148,13 @@ window.addEventListener('message', function(message) {
 				getAllPluginsData();
 			break;
 		case 'Installed':
+			let plugin = allPlugins.find(function(el){ return el.guid === message.guid});
 			installedPlugins.push(
 				{
-					url: allPlugins[message.guid].configUrl,
+					url: plugin.url,
 					guid: message.guid,
 					canRemoved: true,
-					obj: allPlugins[message.guid].config
+					obj: plugin
 				}
 			);
 
@@ -176,8 +177,9 @@ window.addEventListener('message', function(message) {
 			let installed = installedPlugins.find(function(el) {
 				return (el.guid == message.guid);
 			});
+			let config = allPlugins.find(function(el){ return el.guid === message.guid});
 
-			installed.obj.version = allPlugins[message.guid].config.version;
+			installed.obj.version = config.version;
 
 			if (!elements.divSelected.classList.contains('hidden')) {
 				this.document.getElementById('btn_update').classList.add('hidden');
@@ -334,34 +336,33 @@ function toogleLoader(show, text) {
 
 function getAllPluginsData() {
 	// get config file for each item in config.json
-	let count = 0; 
-	for (const guid in allPlugins) {
-		count++;
-		let pluginUrl = allPlugins[guid].configUrl;
+	let counter = 0;
+	allPlugins.forEach(function(pluginUrl, i, arr) {
+		counter++;
 		makeRequest(pluginUrl).then(
 			function(response) {
+				counter--;
 				let config = JSON.parse(response);
-				let guid = config.guid.substring(5, 41);
-				allPlugins[guid].config = config;
-				Ps.update();
-				isLoading = false;
-				count--;
-				if (!count) {
+				config.url = pluginUrl;
+				arr[i] = config;
+				// Ps.update();
+				if (!counter) {
+					isLoading = false;
 					showListofPlugins(true);
 					toogleLoader(false);
 				}
 			},
 			function(err) {
+				// TODO решить проблему, если не получили конфиг, чтобы у нас не было лишних (пустых элементов)
 				createError(err);
-				isLoading = false;
-				count--;
-				if (!count) {
+				if (!counter) {
+					isLoading = false;
 					showListofPlugins(true);
 					toogleLoader(false);
 				}
 			}
 		);
-	}
+	})
 	Ps = new PerfectScrollbar('#' + "div_main", {});
 };
 
@@ -371,13 +372,15 @@ function showListofPlugins(bAll) {
 	counter = 0;
 	if (bAll) {
 		// show all plugins
-		for (const guid in allPlugins) {
-			createPluginDiv(guid);	
-		}
+		allPlugins.forEach(function(plugin) {
+			if (plugin)
+				createPluginDiv(plugin, false);
+		});
 	} else if (installedPlugins.length) {
 		// show only installed
-		installedPlugins.forEach(function(el) {
-			createPluginDiv(el.guid);
+		// TODO подумать над тем, что если в списке установленных есть плагин, которого нет в маркетплейсе
+		installedPlugins.forEach(function(plugin) {
+			createPluginDiv(plugin, true);
 		});
 	} else {
 		// if no istalled plugins and my plugins button was clicked
@@ -386,7 +389,7 @@ function showListofPlugins(bAll) {
 
 }
 
-function createPluginDiv(guid) {
+function createPluginDiv(plugin, bInstalled) {
 	// this function creates div (preview) for plugins
 	// TODO может сделать динамическое количество элементов в одной строке
 	if (counter <= 0 || counter >= 4) {
@@ -397,26 +400,26 @@ function createPluginDiv(guid) {
 	}
 
 	let div = document.createElement('div');
-	div.id = guid;
-	div.setAttribute('data-guid', guid);
+	div.id = plugin.guid;
+	div.setAttribute('data-guid', plugin.guid);
 	div.className = 'div_item';
-	let installed = installedPlugins.find(function(el) {
-		return (el.guid == guid);
-	});
-	
+	let installed = bInstalled ? plugin : installedPlugins.find( function(el) { return (el.guid == plugin.guid); } );
 	let bHasUpdate = false;
 	if (isDesctop && installed) {
 		const installedV = (installed.obj.version ? installed.obj.version.split('.').join('') : 1);
-		const lastV = (allPlugins[guid].config.version ? allPlugins[guid].config.version.split('.').join('') : installedV);
+		const lastV = (plugin.version ? plugin.version.split('.').join('') : installedV);
 		if (lastV > installedV)
 			bHasUpdate = true;
 	}
 
-	let imageUrl = allPlugins[guid].imageUrl;
-	if (!allPlugins[guid].config)
-		return;
-
-	let variations = allPlugins[guid].config.variations[0];
+	// TODO либо в getInstalled возвращать ещё и url или делать такой поиск для картинки
+	if (bInstalled)
+		plugin = allPlugins.find(function(el){
+			return el.guid === plugin.guid
+		});
+	if (!plugin) return;
+	let imageUrl = plugin.url.replace('config.json','');
+	let variations = plugin.variations[0];
 	// TODO решить вопрос со scale, чтобы выбирать нужную иконку
 	if (variations.icons2) {
 		//
@@ -435,7 +438,7 @@ function createPluginDiv(guid) {
 		imageUrl = "./resources/img/defaults/light/icon@2x.png"
 	}
 	// TODO подумать от куда брать цвет на фон под картинку (может в config добавить)
-	let name = (bTranslate && allPlugins[guid].config.nameLocale) ? allPlugins[guid].config.nameLocale[shortLang] : allPlugins[guid].config.name;
+	let name = (bTranslate && plugin.nameLocale) ? plugin.nameLocale[shortLang] : plugin.name;
 	let description = (bTranslate && variations.descriptionLocale) ? variations.descriptionLocale[shortLang] : variations.description;
 	let template = '<div class="div_image" onclick="onClickItem(event.target)">' +
 						// временно поставил такие размеры картинки (чтобы выглядело симминтрично пока)
@@ -466,11 +469,13 @@ function onClickInstall(target) {
 	// click install button
 	toogleLoader(true, "Installation");
 	let guid = target.parentNode.parentNode.getAttribute('data-guid');
+	let plugin = allPlugins.find( function(el) { return el.guid === guid; } );
 	let message = {
 		type : 'install',
-		config : allPlugins[guid].config
+		url : plugin.url, //replace('raw.githubusercontent', 'github').replace('master', 'blob/master'),
+		guid : guid,
+		config : plugin
 	};
-	message.config.baseUrl = allPlugins[guid].configUrl.substr(0, allPlugins[guid].configUrl.length - "config.json".length);
 	sendMessage(message);
 };
 
@@ -478,11 +483,13 @@ function onClickUpdate(target) {
 	// click update button
 	toogleLoader(true, "Updating");
 	let guid = target.parentElement.parentElement.parentElement.getAttribute('data-guid');
+	let plugin = allPlugins.find( function(el) { return el.guid === guid; } );
 	let message = {
 		type : 'update',
-		config : allPlugins[guid].config
+		url : plugin.url,
+		guid : guid,
+		config : plugin
 	};
-	message.config.baseUrl = allPlugins[guid].configUrl.substr(0, allPlugins[guid].configUrl.length - "config.json".length);
 	sendMessage(message);
 };
 
@@ -515,16 +522,19 @@ function onClickItem(target) {
 	let installed = installedPlugins.find(function(el) {
 		return (el.guid == guid);
 	});
+	let plugin = allPlugins.find(function(el) {
+		return (el.guid == guid);
+	});
 
 	let bHasUpdate = false;
 	if (isDesctop && installed) {
 		let installedV = installed.obj.version.split('.').join('');
-		let lastV = allPlugins[guid].config.version.split('.').join('');
+		let lastV = plugin.version.split('.').join('');
 		if (lastV > installedV)
 			bHasUpdate = true;
 	}
-	let confUrl = allPlugins[guid].configUrl.replace('raw.githubusercontent', 'github');
-	let pluginUrl = (allPlugins[guid].configUrl.includes('sdkjs-plugins') ? confUrl.replace('master', 'tree/master').replace('config.json', '') : confUrl.replace('master/config.json', ''));
+	let confUrl = plugin.url.replace('raw.githubusercontent', 'github');
+	let pluginUrl = (plugin.url.includes('sdkjs-plugins') ? confUrl.replace('master', 'tree/master').replace('config.json', '') : confUrl.replace('master/config.json', ''));
 	// TODO проблема с тем, что в некоторых иконках плагинов есть отступ сверху, а в некоторых его нет (исходя их этого нужен разный отступ у span справа, чтобы верхние края совпадали)
 	elements.divSelected.setAttribute('data-guid', guid);
 	elements.imgIcon.setAttribute('src', target.children[0].src);
@@ -551,7 +561,7 @@ function onClickItem(target) {
 		elements.btnInstall.classList.remove('hidden');
 	}
 
-	if (allPlugins[guid].config.variations[0].isVisual) {
+	if (plugin.variations[0].isVisual) {
 		elements.imgScreenshot.setAttribute('src', './resources/img/screenshotes/' + guid + '.png');
 		elements.imgScreenshot.classList.remove('hidden');
 	} else {
