@@ -16,6 +16,19 @@
  *
  */
 
+function getUrlSearchValue(key) {
+	let res = '';
+	if (window.location && window.location.search) {
+		let search = window.location.search;
+		let pos1 = search.indexOf(key + '=') + key.length + 1;
+		if (-1 != pos1) {
+			let pos2 = search.indexOf("&", pos1);
+			res = search.substring(pos1, (pos2 != -1 ? pos2 : search.length) )
+		}
+	}
+	return res;
+};
+
 let allPlugins;                                               // list of all plugins from config
 let installedPlugins;                                         // list of intalled plugins
 const configUrl = './config.json';                            // url to config.json
@@ -24,8 +37,8 @@ const isDesctop = window.AscDesktopEditor !== undefined;      // desctop detecti
 let isLoading = false;                                        // flag loading
 let loader;                                                   // loader
 var Ps;                                                       // perfect scrollbar
-let theme = parent.localStorage.getItem('ui-theme-id') || ''; // current theme
-const lang = detectLanguage() || "en-EN";                     // current language
+let themeType = detectThemeType();                            // current theme
+const lang = detectLanguage();                                // current language
 const shortLang = lang.split('-')[0];                         // short language
 let bTranslate = false;                                       // flag translate or not
 let translate =                                               // translations for current language
@@ -74,7 +87,7 @@ let row;
 window.Asc = {
 	plugin : {
 		theme : {
-			type :  JSON.parse(parent.localStorage.getItem('ui-theme')).type
+			type :  themeType
 		}
 	}
 }
@@ -278,25 +291,15 @@ function sendMessage(message) {
 };
 
 function detectLanguage() {
-	// this function detects current language
-	if (parent.location && parent.location.search) {
-		let _langSearch = parent.location.search;
-		let _pos1 = _langSearch.indexOf("lang=");
-		let _pos2 = (-1 != _pos1) ? _langSearch.indexOf("&", _pos1) : -1;
-		let _lang = null;
-		if (_pos1 >= 0) {
-			_pos1 += 5;
+	let lang = getUrlSearchValue("lang");
+	if (lang.length == 2)
+		lang = (lang.toLowerCase() + "-" + lang.toUpperCase());
+	return lang || 'en-EN';
+};
 
-			if (_pos2 < 0)
-				_pos2 = _langSearch.length;
-
-			_lang = _langSearch.substr(_pos1, _pos2 - _pos1);
-			if (_lang.length == 2) {
-				_lang = (_lang.toLowerCase() + "-" + _lang.toUpperCase());
-			}
-		}
-		return _lang;
-	}
+function detectThemeType() {
+	let type = getUrlSearchValue("theme-type");
+	return type || 'light';
 };
 
 function initElemnts() {
@@ -344,6 +347,7 @@ function getAllPluginsData() {
 				counter--;
 				let config = JSON.parse(response);
 				config.url = pluginUrl;
+				config.baseUrl = pluginUrl.replace('config.json','');// pluginUrl.substr(0, pluginUrl.length - "config.json".length);
 				arr[i] = config;
 				// Ps.update();
 				if (!counter) {
@@ -425,7 +429,7 @@ function createPluginDiv(plugin, bInstalled) {
 		//
 		let icon = variations.icons2[0];
 		for (let i = 0; i < variations.icons2.length; i++) {
-			if (theme.includes(variations.icons2[i].style)) {
+			if (themeType.includes(variations.icons2[i].style)) {
 				icon = variations.icons2[i];
 				break;
 			}
@@ -438,8 +442,8 @@ function createPluginDiv(plugin, bInstalled) {
 		imageUrl = "./resources/img/defaults/light/icon@2x.png"
 	}
 	// TODO подумать от куда брать цвет на фон под картинку (может в config добавить)
-	let name = (bTranslate && plugin.nameLocale) ? plugin.nameLocale[shortLang] : plugin.name;
-	let description = (bTranslate && variations.descriptionLocale) ? variations.descriptionLocale[shortLang] : variations.description;
+	let name = (bTranslate && plugin.nameLocale && plugin.nameLocale[shortLang]) ? plugin.nameLocale[shortLang] : plugin.name;
+	let description = (bTranslate && variations.descriptionLocale && variations.descriptionLocale[shortLang]) ? variations.descriptionLocale[shortLang] : variations.description;
 	let template = '<div class="div_image" onclick="onClickItem(event.target)">' +
 						// временно поставил такие размеры картинки (чтобы выглядело симминтрично пока)
 						'<img style="width:56px;" src="' + imageUrl + '">' +
@@ -476,6 +480,7 @@ function onClickInstall(target) {
 		guid : guid,
 		config : plugin
 	};
+	// message.config.baseUrl = plugin.url.substr(0, plugin.url.length - "config.json".length);
 	sendMessage(message);
 };
 
@@ -490,6 +495,7 @@ function onClickUpdate(target) {
 		guid : guid,
 		config : plugin
 	};
+	// message.config.baseUrl = plugin.url.substr(0, plugin.url.length - "config.json".length);
 	sendMessage(message);
 };
 

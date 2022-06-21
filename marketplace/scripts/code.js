@@ -37,36 +37,28 @@
 				break;
 			case 'install':
 				window.Asc.plugin.executeMethod("InstallPlugin", [data.config, data.guid], function(result) {
-					setTimeout(function(){
-						message.source.postMessage(JSON.stringify(result), "*");
-					}, 100);
+					message.source.postMessage(JSON.stringify(result), "*");
 				});
 				break;
 			case 'remove':
 				window.Asc.plugin.executeMethod("RemovePlugin", [data.guid], function(result) {
-					setTimeout(function(){
-						message.source.postMessage(JSON.stringify(result), "*");
-
-					}, 100);
+					message.source.postMessage(JSON.stringify(result), "*");
 				});
 				break;
 			case 'update':
 				window.Asc.plugin.executeMethod("UpdatePlugin", [data.config, data.guid], function(result) {
-					setTimeout(function(){
-						message.source.postMessage(JSON.stringify(result), "*");
-					}, 100);
+					message.source.postMessage(JSON.stringify(result), "*");
 				});
 				break;
 		}
 		
 	}, false);
 
-	window.Asc.plugin.onThemeChanged = function(theme)
-	{
+	window.Asc.plugin.onThemeChanged = function(theme) {
 		window.Asc.plugin.onThemeChangedBase(theme);
 		let style = document.getElementsByTagName('head')[0].lastChild;
-		let ifr = document.getElementById('iframe');
+		let ifr = document.getElementsByTagName('iframe')[0];
 		if (ifr && ifr.contentWindow)
-			ifr.contentWindow.postMessage(JSON.stringify({ type: 'Theme', theme: theme, style : style.innerHTML}));
+			ifr.contentWindow.postMessage(JSON.stringify({ type: 'Theme', theme: theme, style : style.innerHTML}), "*");
 	};
 })(window, undefined);
