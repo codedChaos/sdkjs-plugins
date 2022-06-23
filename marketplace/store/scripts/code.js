@@ -28,7 +28,7 @@ function getUrlSearchValue(key) {
 	}
 	return res;
 };
-
+let start = Date.now();
 let allPlugins;                                               // list of all plugins from config
 let installedPlugins;                                         // list of intalled plugins
 const configUrl = './config.json';                            // url to config.json
@@ -157,10 +157,15 @@ window.addEventListener('message', function(message) {
 	switch (message.type) {
 		case 'InstalledPlugins':
 			installedPlugins = message.data;
+			console.log('getInstalledPlugins: ' + (Date.now() - start));
 			if (allPlugins)
 				getAllPluginsData();
 			break;
 		case 'Installed':
+			if (!message.guid) {
+				toogleLoader(false);
+				return;
+			}
 			let plugin = allPlugins.find(function(el){ return el.guid === message.guid});
 			installedPlugins.push(
 				{
@@ -187,6 +192,10 @@ window.addEventListener('message', function(message) {
 			toogleLoader(false);
 			break;
 		case 'Updated':
+			if (!message.guid) {
+				toogleLoader(false);
+				return;
+			}
 			let installed = installedPlugins.find(function(el) {
 				return (el.guid == message.guid);
 			});
@@ -202,6 +211,10 @@ window.addEventListener('message', function(message) {
 			toogleLoader(false);
 			break;
 		case 'Removed':
+			if (!message.guid) {
+				toogleLoader(false);
+				return;
+			}
 			installedPlugins = installedPlugins.filter(function(el){return el.guid !== message.guid});
 
 			if (elements.btnMyPlugins.classList.contains('primary')) {
@@ -236,6 +249,13 @@ window.addEventListener('message', function(message) {
             styleTheme.innerHTML = message.style + rule;
             document.getElementsByTagName('head')[0].appendChild(styleTheme);
 			break;
+		case 'onExternalMouseUp':
+			var evt = document.createEvent("MouseEvents");
+			evt.initMouseEvent("mouseup", true, true, window, 1, 0, 0, 0, 0,
+				false, false, false, false, 0, null);
+
+			document.dispatchEvent(evt);
+			break;
 	};
 }, false);
 
@@ -266,10 +286,7 @@ function makeRequest(url) {
 		xhr.onload = function () {
 			if (this.readyState == 4) {
 				if (this.status == 200 || location.href.indexOf("file:") == 0) {
-					setTimeout(() => {
-						resolve(this.response);
-					}, 500);
-					// resolve(this.response);
+					resolve(this.response);
 				}
 				if (this.status >= 400) {
 					reject(new Error(this.response));
@@ -351,6 +368,7 @@ function getAllPluginsData() {
 				arr[i] = config;
 				// Ps.update();
 				if (!counter) {
+					console.log('getAllPluginsData: ' + (Date.now() - start));
 					isLoading = false;
 					showListofPlugins(true);
 					toogleLoader(false);
@@ -371,6 +389,7 @@ function getAllPluginsData() {
 };
 
 function showListofPlugins(bAll) {
+	// TODO возможно надо дождаться получения переводов ()
 	// show list of plugins
 	elements.divMain.innerHTML = "";
 	counter = 0;
@@ -394,6 +413,7 @@ function showListofPlugins(bAll) {
 }
 
 function createPluginDiv(plugin, bInstalled) {
+	console.log('createPluginDiv');
 	// this function creates div (preview) for plugins
 	// TODO может сделать динамическое количество элементов в одной строке
 	if (counter <= 0 || counter >= 4) {
@@ -421,7 +441,10 @@ function createPluginDiv(plugin, bInstalled) {
 		plugin = allPlugins.find(function(el){
 			return el.guid === plugin.guid
 		});
-	if (!plugin) return;
+	if (!plugin) {
+		plugin = installed.obj;
+		plugin.url = installed.url
+	}
 	let imageUrl = plugin.url.replace('config.json','');
 	let variations = plugin.variations[0];
 	// TODO решить вопрос со scale, чтобы выбирать нужную иконку
@@ -661,6 +684,7 @@ function getTranslation() {
 					bTranslate = true;
 					makeRequest('./translations/' + (fullName || shortName) + '.json').then(
 						function(res) {
+							console.log('getTranslation: ' + (Date.now() - start));
 							translate = JSON.parse(res);
 							onTranslate();
 						},
@@ -706,6 +730,7 @@ function onTranslate() {
 function showMarketplace() {
 	// show main window to user
 	elements.divBody.classList.remove('hidden');
+	console.log('showMarketplace: ' + (Date.now() - start));
 	// убираем пока шапку, так как в плагине есть своя
 	// elements.divHeader.classList.remove('hidden');
 };

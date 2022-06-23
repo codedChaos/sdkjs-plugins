@@ -54,6 +54,17 @@
 		
 	}, false);
 
+	window.Asc.plugin.onExternalMouseUp = function() {
+		let ifr = document.getElementsByTagName('iframe')[0];
+		if (ifr && ifr.contentWindow)
+			ifr.contentWindow.postMessage(JSON.stringify({ type: 'onExternalMouseUp'}), "*");
+		var evt = document.createEvent("MouseEvents");
+		evt.initMouseEvent("mouseup", true, true, window, 1, 0, 0, 0, 0,
+			false, false, false, false, 0, null);
+
+		document.dispatchEvent(evt);
+	};
+
 	window.Asc.plugin.onThemeChanged = function(theme) {
 		window.Asc.plugin.onThemeChangedBase(theme);
 		let style = document.getElementsByTagName('head')[0].lastChild;
